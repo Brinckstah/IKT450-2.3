@@ -8,6 +8,17 @@ from torchvision import models
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
 import matplotlib.pyplot as plt
 import seaborn as sns
+#from vgg_pytorch import VGG 
+
+class ResNetModel(nn.Module):
+    def __init__(self, num_classes=11):
+        super(ResNetModel, self).__init__()
+        self.model = models.resnet18(pretrained=True) # 34, 50, 101, 152 for flere convl
+        self.model.fc = nn.Linear(self.model.fc.in_features, num_classes)
+        
+    def forward(self, x):
+        return self.model(x)
+
 
 class SimpleCNN(nn.Module):
     def __init__(self):
@@ -21,7 +32,7 @@ class SimpleCNN(nn.Module):
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 64 * 56 * 56)
+        x = x.view(-1, 64 * 56 * 56) # flattening tensor to single dimension
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
@@ -39,8 +50,6 @@ def dataloader():
     training_path = f'{ROOT_PATH}/training'
     validation_path = f'{ROOT_PATH}/validation'
     evaluation_path = f'{ROOT_PATH}/evaluation'
-    #path = kagglehub.dataset_download("vermaavi/food11")
-    #data = datasets.ImageFolder(root=path, transform=transform)
     
     train_dataset = datasets.ImageFolder(training_path, transform=transform)
     evaluation_dataset = datasets.ImageFolder(evaluation_path, transform=transform)
@@ -91,7 +100,7 @@ def test_model(model, val, criterion, device):
     return all_labels, all_preds
     
 def results(all_labels, all_preds, label_names):
-    all_preds = [p[0] for p in all_preds]  # Flatten predictions
+    #all_preds = [p[0] for p in all_preds]  # Flatten predictions
     
     accuracy = accuracy_score(all_labels, all_preds)
     precision = precision_score(all_labels, all_preds, average='macro')
@@ -134,7 +143,9 @@ def main():
     label_names = [DATASET_LABELS[str(i)] for i in range(11)]
 
     train_dataloader, evaluation_dataloader, test_dataloader = dataloader()
-    model = SimpleCNN()
+    #model = SimpleCNN()
+    model = ResNetModel()
+    #model = VGG.from_pretrained('vgg11', num_classes=10)
     
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
